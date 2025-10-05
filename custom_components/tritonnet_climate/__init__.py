@@ -5,6 +5,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.discovery import async_load_platform
+from homeassistant.helpers import device_registry as dr
 
 from .const import (
     DOMAIN,
@@ -14,6 +15,8 @@ from .const import (
     CONF_COVER,
     DATA_CONFIG,
     DATA_CONTROLLER,
+    DATA_DEVICE_IDENTIFIERS,
+    DEVICE_UNIQUE_ID,
 )
 from .controller import TritonNetController
 
@@ -53,7 +56,22 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.data[DOMAIN][DATA_CONFIG] = cfg
     hass.data[DOMAIN][DATA_CONTROLLER] = controller
 
-    _LOGGER.info("TritonNET Climate: main_ac=%s rooms=%s", main_ac, list(rooms.keys()))
+    # Create (or get) a single device in the device registry that all room entities will attach to.
+    device_registry = dr.async_get(hass)
+    device = device_registry.async_get_or_create(
+        config_entry_id=None,  # YAML setup; no ConfigEntry
+        identifiers={(DOMAIN, DEVICE_UNIQUE_ID)},
+        manufacturer="TritonNET",
+        name="TritonNET Climate",
+        model="Controller"
+    )
+    # Store the identifiers for child entities to reuse
+    hass.data[DOMAIN][DATA_DEVICE_IDENTIFIERS] = {(DOMAIN, DEVICE_UNIQUE_ID)}
+
+    _LOGGER.info(
+        "TritonNET Climate: main_ac=%s rooms=%s (device_id=%s)",
+        main_ac, list(rooms.keys()), device.id
+    )
 
     # Load the climate platform using legacy YAML discovery
     hass.async_create_task(

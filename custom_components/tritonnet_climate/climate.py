@@ -17,7 +17,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 
 from .const import (
-    DOMAIN, DATA_CONFIG, DATA_CONTROLLER, CONF_ROOMS, CONF_NAME, CONF_COVER
+    DOMAIN,
+    DATA_CONFIG,
+    DATA_CONTROLLER,
+    DATA_DEVICE_IDENTIFIERS,
+    CONF_ROOMS, CONF_NAME, CONF_COVER
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -84,7 +88,8 @@ class TritonNetRoomClimate(ClimateEntity):
         self._controller = controller
         self._room_key = room_key
         self._attr_name = friendly_name
-        self.entity_id = f"climate.tritonnet_{room_key}"
+        # Let HA generate entity_id from unique_id + name (safer for registry/device linking)
+        # self.entity_id = f"climate.tritonnet_{room_key}"
         self._cover_entity_id = cover_entity_id
 
         # Respect system unit (°C/°F)
@@ -97,16 +102,19 @@ class TritonNetRoomClimate(ClimateEntity):
         self._attr_swing_mode = "off"
         self._attr_target_temperature = 21.0
         self._attr_target_temperature_low = None
-        the_high: Optional[float] = None
-        self._attr_target_temperature_high = the_high
+        self._attr_target_temperature_high = None
         self._attr_min_temp = 7.0
         self._attr_max_temp = 30.0
         self._attr_unique_id = f"tritonnet_climate_{room_key}"
 
+        # Cache the shared device identifiers from __init__.py
+        self._device_identifiers = self.hass.data[DOMAIN][DATA_DEVICE_IDENTIFIERS]
+
     @property
     def device_info(self) -> DeviceInfo:
+        # All room entities point to the SAME device by returning identical identifiers.
         return DeviceInfo(
-            identifiers={(DOMAIN, "tritonnet_climate")},
+            identifiers=self._device_identifiers,
             name="TritonNET Climate",
             manufacturer="TritonNET",
             model="Room Virtual Climate",
