@@ -12,7 +12,7 @@ from homeassistant.components.climate.const import (
     ATTR_TARGET_TEMP_LOW, ATTR_TARGET_TEMP_HIGH,
     ATTR_HVAC_MODE,
 )
-from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS
+from homeassistant.const import ATTR_TEMPERATURE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 
@@ -85,6 +85,8 @@ class TritonNetRoomClimate(ClimateEntity):
         self._attr_name = friendly_name
         self.entity_id = f"climate.tritonnet_{room_key}"
         self._cover_entity_id = cover_entity_id
+
+        self._attr_temperature_unit = hass.config.units.temperature_unit
 
         # Defaults
         self._attr_hvac_mode = HVACMode.OFF
