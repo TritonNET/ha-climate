@@ -4,14 +4,15 @@ from typing import Any, Optional
 from homeassistant.components.climate import (
     ClimateEntity,
     ClimateEntityFeature,
-    HVACMode,
 )
 from homeassistant.components.climate.const import (
+    HVACMode,                               # import HVACMode from .const for consistency
     FAN_AUTO, FAN_LOW, FAN_MEDIUM, FAN_HIGH,
     PRESET_ECO, PRESET_AWAY, PRESET_COMFORT,
-    ATTR_TEMPERATURE, ATTR_TARGET_TEMP_LOW, ATTR_TARGET_TEMP_HIGH, ATTR_HVAC_MODE,
+    ATTR_TARGET_TEMP_LOW, ATTR_TARGET_TEMP_HIGH,
+    ATTR_HVAC_MODE,
 )
-from homeassistant.const import TEMP_CELSIUS
+from homeassistant.const import ATTR_TEMPERATURE, TEMP_CELSIUS
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 
@@ -22,10 +23,6 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 ASYNC_SETUP_PLATFORM_CALLED = False
-
-async def async_setup_platform(hass: HomeAssistant, config, async_add_entities, discovery_info=None):
-    # Not used; we are a "component" that forwards to platform via __init__.py
-    return
 
 async def async_setup_entry(hass, entry, async_add_entities):
     # Not used; we are YAML only.
@@ -86,6 +83,7 @@ class TritonNetRoomClimate(ClimateEntity):
         self._controller = controller
         self._room_key = room_key
         self._attr_name = friendly_name
+        self.entity_id = f"climate.tritonnet_{room_key}"
         self._cover_entity_id = cover_entity_id
 
         # Defaults
