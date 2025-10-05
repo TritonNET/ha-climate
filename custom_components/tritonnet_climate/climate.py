@@ -16,7 +16,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
 
-from .const import DOMAIN, CONF_ROOMS, CONF_NAME, CONF_COVER, DATA
+from .const import DOMAIN, CONF_ROOMS, CONF_NAME, CONF_COVER, DATA, ENTITY_PREFIX
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -105,6 +105,11 @@ class TritonNetRoomClimate(ClimateEntity):
 
         # Unique per entity & linked to this ConfigEntry
         self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_{room_key}"
+
+        # Force deterministic entity_id on first create
+        # (If an entity with this unique_id already exists, registry keeps the stored id.
+        # We also migrate in __init__.py to this id if needed.)
+        self.entity_id = f"climate.{ENTITY_PREFIX}{room_key}"
 
     @property
     def device_info(self) -> DeviceInfo:

@@ -15,7 +15,6 @@ class TritonNetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self.hass.config_entries.async_update_entry(
                 entry, data=import_config, title="TritonNET Climate"
             )
-            # No need to reload here; HA reloads on next start or when you change YAML.
             return self.async_abort(reason="already_configured")
 
         return self.async_create_entry(title="TritonNET Climate", data=import_config)

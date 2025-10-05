@@ -8,8 +8,9 @@ from homeassistant.config_entries import ConfigEntry, SOURCE_IMPORT
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers import entity_registry as er
 
-from .const import DOMAIN, CONF_MAIN_AC, CONF_ROOMS, CONF_NAME, CONF_COVER, DATA
+from .const import DOMAIN, CONF_MAIN_AC, CONF_ROOMS, CONF_NAME, CONF_COVER, DATA, ENTITY_PREFIX
 from .controller import TritonNetController
 
 _LOGGER = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ CONFIG_SCHEMA = vol.Schema(
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Kick off import flow if YAML is present."""
     if DOMAIN in config:
-        # IMPORTANT: fire-and-forget (do NOT await) to avoid bootstrap state errors.
+        # Fire-and-forget, don't await (avoids bootstrap invalid-state issues)
         hass.async_create_task(
             hass.config_entries.flow.async_init(
                 DOMAIN, context={"source": SOURCE_IMPORT}, data=config[DOMAIN]
@@ -61,6 +62,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "config": data,
         }
     }
+
+    # --- Entity Registry migration to climate.tritonnet_<room_key> ---
+    ent_reg = er.async_get(hass)
+    for room_key in rooms.keys():
+        unique_id = f"{DOMAIN}_{entry.entry_id}_{room_key}"
+        current_eid = ent_reg.async_get_entity_id("climate", DOMAIN, unique_id)
+        desired_eid = f"climate.{ENTITY_PREFIX}{room_key}"
+
+        if current_eid and current_eid != desired_eid:
+            # Only rename if desired id is free
+            if ent_reg.async_get(desired_eid) is None:
+                ent_reg.async_update_entity(current_eid, new_entity_id=desired_eid)
 
     _LOGGER.info(
         "TritonNET Climate set up: main_ac=%s rooms=%s",
