@@ -19,7 +19,7 @@ PLATFORMS: list[Platform] = [Platform.CLIMATE]
 ROOM_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_NAME): cv.string,
-        vol.Required("cover"): cv.entity_id,   # keep string literal for clarity
+        vol.Required("cover"): cv.entity_id,
     }
 )
 
@@ -38,10 +38,11 @@ CONFIG_SCHEMA = vol.Schema(
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Kick off import flow if YAML is present."""
     if DOMAIN in config:
-        await hass.config_entries.flow.async_init(
-            DOMAIN,
-            context={"source": SOURCE_IMPORT},
-            data=config[DOMAIN],
+        # IMPORTANT: fire-and-forget (do NOT await) to avoid bootstrap state errors.
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": SOURCE_IMPORT}, data=config[DOMAIN]
+            )
         )
     return True
 

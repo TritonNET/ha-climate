@@ -1,7 +1,7 @@
 {
   "domain": "tritonnet_climate",
   "name": "TritonNET Climate",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "documentation": "https://github.com/TritonNET/ha-climate",
   "requirements": [],
   "codeowners": [ "@TritonNET" ],

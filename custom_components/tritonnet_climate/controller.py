@@ -27,5 +27,5 @@ class TritonNetController:
             room_key, hvac_mode, target_temp, target_temp_low, target_temp_high,
             fan_mode, preset_mode, swing_mode, humidity
         )
-        # TODO: implement real control here
+        # TODO: implement real control here (IR, REST, cover control, etc.)
         return True
