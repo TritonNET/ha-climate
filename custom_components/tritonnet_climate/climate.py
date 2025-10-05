@@ -1,10 +1,9 @@
+from __future__ import annotations
+
 import logging
 from typing import Any, Optional, Union
 
-from homeassistant.components.climate import (
-    ClimateEntity,
-    ClimateEntityFeature,
-)
+from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
 from homeassistant.components.climate.const import (
     HVACMode,
     FAN_AUTO, FAN_LOW, FAN_MEDIUM, FAN_HIGH,
@@ -14,33 +13,31 @@ from homeassistant.components.climate.const import (
 )
 from homeassistant.const import ATTR_TEMPERATURE
 from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import DeviceInfo
 
-from .const import (
-    DOMAIN,
-    DATA_CONFIG,
-    DATA_CONTROLLER,
-    DATA_DEVICE_IDENTIFIERS,
-    CONF_ROOMS, CONF_NAME, CONF_COVER
-)
+from .const import DOMAIN, CONF_ROOMS, CONF_NAME, CONF_COVER, DATA
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_platform(
-    hass: HomeAssistant, config, async_add_entities, discovery_info=None
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ):
-    """Create room climate entities from YAML config that __init__ stored in hass.data."""
-    triton_cfg = hass.data[DOMAIN][DATA_CONFIG]
-    controller = hass.data[DOMAIN][DATA_CONTROLLER]
-    room_items = list(triton_cfg[CONF_ROOMS].items())
+    """Create room climate entities from the ConfigEntry."""
+    stored = hass.data[DOMAIN][entry.entry_id][DATA]
+    controller = stored["controller"]
+    cfg = stored["config"]
 
+    room_items = list(cfg[CONF_ROOMS].items())
     entities = []
+
     for room_key, room in room_items:
         name = room[CONF_NAME]
         cover = room[CONF_COVER]
         entities.append(
             TritonNetRoomClimate(
                 hass=hass,
+                entry=entry,
                 controller=controller,
                 room_key=room_key,
                 friendly_name=name,
@@ -79,16 +76,17 @@ class TritonNetRoomClimate(ClimateEntity):
     def __init__(
         self,
         hass: HomeAssistant,
+        entry: ConfigEntry,
         controller,
         room_key: str,
         friendly_name: str,
         cover_entity_id: str,
     ):
         self.hass = hass
+        self._entry = entry
         self._controller = controller
         self._room_key = room_key
         self._attr_name = friendly_name
-        # Let HA generate entity_id from unique_id + name
         self._cover_entity_id = cover_entity_id
 
         # Respect system unit (°C/°F)
@@ -100,29 +98,23 @@ class TritonNetRoomClimate(ClimateEntity):
         self._attr_preset_mode = PRESET_COMFORT
         self._attr_swing_mode = "off"
         self._attr_target_temperature = 21.0
-        self._attr_target_temperature_low = None
-        self._attr_target_temperature_high = None
+        self._attr_target_temperature_low: Optional[float] = None
+        self._attr_target_temperature_high: Optional[float] = None
         self._attr_min_temp = 7.0
         self._attr_max_temp = 30.0
-        self._attr_unique_id = f"tritonnet_climate_{room_key}"
 
-        # Cache the shared device identifiers from __init__.py
-        self._device_identifiers = self.hass.data[DOMAIN][DATA_DEVICE_IDENTIFIERS]
+        # Unique per entity & linked to this ConfigEntry
+        self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_{room_key}"
 
     @property
     def device_info(self) -> DeviceInfo:
-        # All room entities point to the SAME device by returning identical identifiers.
+        # All room entities share one device per ConfigEntry
         return DeviceInfo(
-            identifiers=self._device_identifiers,
+            identifiers={(DOMAIN, self._entry.entry_id)},
             name="TritonNET Climate",
             manufacturer="TritonNET",
-            model="Room Virtual Climate",
+            model="Controller",
         )
-
-    @property
-    def available(self) -> bool:
-        # Optionally: derive from main AC and cover state.
-        return True
 
     @property
     def target_temperature(self) -> Optional[float]:

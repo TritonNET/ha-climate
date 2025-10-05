@@ -3,11 +3,9 @@ import logging
 _LOGGER = logging.getLogger(__name__)
 
 class TritonNetController:
-    """
-    Stub controller. Replace set_climate() with your actual integration.
-    """
+    """Stub controller. Replace set_climate() with your actual logic."""
 
-    def __init__(self, hass, main_ac_entity_id):
+    def __init__(self, hass, main_ac_entity_id: str):
         self.hass = hass
         self.main_ac = main_ac_entity_id
 
@@ -24,10 +22,10 @@ class TritonNetController:
         swing_mode=None,           # str
         humidity=None              # float/int
     ):
-        # TODO: implement your behavior here
         _LOGGER.info(
             "set_climate(room=%s hvac=%s t=%s t_lo=%s t_hi=%s fan=%s preset=%s swing=%s humidity=%s)",
             room_key, hvac_mode, target_temp, target_temp_low, target_temp_high,
             fan_mode, preset_mode, swing_mode, humidity
         )
+        # TODO: implement real control here
         return True

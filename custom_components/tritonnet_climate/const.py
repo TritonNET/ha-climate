@@ -5,9 +5,4 @@ CONF_ROOMS = "rooms"
 CONF_NAME = "name"
 CONF_COVER = "cover"
 
-DATA_CONFIG = "config"
-DATA_CONTROLLER = "controller"
-DATA_DEVICE_IDENTIFIERS = "device_identifiers"
-
-# Single shared device for all room entities:
-DEVICE_UNIQUE_ID = "tritonnet_controller"  # change if you ever support multiple instances
+DATA = "data"  # hass.data[DOMAIN][entry_id]
