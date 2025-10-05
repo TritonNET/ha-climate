@@ -4,8 +4,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class TritonNetController:
     """
-    Thin controller you can expand.
-    Replace the set_climate() body with your real integration to AC/IR/covers/etc.
+    Stub controller. Replace set_climate() with your actual integration.
     """
 
     def __init__(self, hass, main_ac_entity_id):
@@ -16,25 +15,19 @@ class TritonNetController:
         self,
         room_key,
         *,
-        hvac_mode=None,            # "heat", "cool", "heat_cool", "off", etc.
+        hvac_mode=None,            # HVACMode or str
         target_temp=None,          # float
-        target_temp_low=None,      # float (for heat_cool)
-        target_temp_high=None,     # float (for heat_cool)
-        fan_mode=None,             # "auto", "low", "medium", "high" etc.
-        preset_mode=None,          # "eco", "away", etc.
-        swing_mode=None,           # "on"/"off" or vendor specific
-        humidity=None              # float/int target
+        target_temp_low=None,      # float
+        target_temp_high=None,     # float
+        fan_mode=None,             # str
+        preset_mode=None,          # str
+        swing_mode=None,           # str
+        humidity=None              # float/int
     ):
-        """
-        TODO: Replace this with your logic.
-        For now we only log the request so you can verify calls.
-        """
+        # TODO: implement your behavior here
         _LOGGER.info(
-            "set_climate room=%s hvac_mode=%s target_temp=%s "
-            "range=[%s,%s] fan=%s preset=%s swing=%s humidity=%s",
-            room_key, hvac_mode, target_temp,
-            target_temp_low, target_temp_high, fan_mode, preset_mode, swing_mode, humidity
+            "set_climate(room=%s hvac=%s t=%s t_lo=%s t_hi=%s fan=%s preset=%s swing=%s humidity=%s)",
+            room_key, hvac_mode, target_temp, target_temp_low, target_temp_high,
+            fan_mode, preset_mode, swing_mode, humidity
         )
-        # Example: call your IR blaster, open/close covers, or route commands to main AC.
-        # await self.hass.services.async_call("climate", "set_temperature", {...})
         return True

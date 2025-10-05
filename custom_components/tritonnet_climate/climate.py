@@ -1,12 +1,12 @@
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from homeassistant.components.climate import (
     ClimateEntity,
     ClimateEntityFeature,
 )
 from homeassistant.components.climate.const import (
-    HVACMode,                               # import HVACMode from .const for consistency
+    HVACMode,
     FAN_AUTO, FAN_LOW, FAN_MEDIUM, FAN_HIGH,
     PRESET_ECO, PRESET_AWAY, PRESET_COMFORT,
     ATTR_TARGET_TEMP_LOW, ATTR_TARGET_TEMP_HIGH,
@@ -22,18 +22,10 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-ASYNC_SETUP_PLATFORM_CALLED = False
-
-async def async_setup_entry(hass, entry, async_add_entities):
-    # Not used; we are YAML only.
-    return
-
-async def async_setup_platform_via_forward_entry(hass: HomeAssistant, async_add_entities):
-    # Not used; present for clarity.
-    return
-
-async def async_setup_platform(hass: HomeAssistant, config, async_add_entities, discovery_info=None):
-    # HA will call this because __init__ forwarded the platform load.
+async def async_setup_platform(
+    hass: HomeAssistant, config, async_add_entities, discovery_info=None
+):
+    """Create room climate entities from YAML config that __init__ stored in hass.data."""
     triton_cfg = hass.data[DOMAIN][DATA_CONFIG]
     controller = hass.data[DOMAIN][DATA_CONTROLLER]
     room_items = list(triton_cfg[CONF_ROOMS].items())
@@ -54,9 +46,11 @@ async def async_setup_platform(hass: HomeAssistant, config, async_add_entities, 
 
     async_add_entities(entities, update_before_add=False)
 
+
 class TritonNetRoomClimate(ClimateEntity):
+    """One virtual climate per configured room."""
+
     _attr_should_poll = False
-    _attr_temperature_unit = TEMP_CELSIUS
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE
         | ClimateEntityFeature.FAN_MODE
@@ -78,7 +72,14 @@ class TritonNetRoomClimate(ClimateEntity):
     _attr_preset_modes = [PRESET_ECO, PRESET_AWAY, PRESET_COMFORT]
     _attr_swing_modes = ["off", "on"]
 
-    def __init__(self, hass: HomeAssistant, controller, room_key: str, friendly_name: str, cover_entity_id: str):
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        controller,
+        room_key: str,
+        friendly_name: str,
+        cover_entity_id: str,
+    ):
         self.hass = hass
         self._controller = controller
         self._room_key = room_key
@@ -86,6 +87,7 @@ class TritonNetRoomClimate(ClimateEntity):
         self.entity_id = f"climate.tritonnet_{room_key}"
         self._cover_entity_id = cover_entity_id
 
+        # Respect system unit (°C/°F)
         self._attr_temperature_unit = hass.config.units.temperature_unit
 
         # Defaults
@@ -95,7 +97,8 @@ class TritonNetRoomClimate(ClimateEntity):
         self._attr_swing_mode = "off"
         self._attr_target_temperature = 21.0
         self._attr_target_temperature_low = None
-        self._attr_target_temperature_high = None
+        the_high: Optional[float] = None
+        self._attr_target_temperature_high = the_high
         self._attr_min_temp = 7.0
         self._attr_max_temp = 30.0
         self._attr_unique_id = f"tritonnet_climate_{room_key}"
@@ -111,23 +114,29 @@ class TritonNetRoomClimate(ClimateEntity):
 
     @property
     def available(self) -> bool:
-        # You can make this dependent on main AC/cover availability, if desired.
+        # Optionally: derive from main AC and cover state.
         return True
 
     @property
     def target_temperature(self) -> Optional[float]:
-        return None if self._attr_hvac_mode == HVACMode.HEAT_COOL else self._attr_target_temperature
+        if self._attr_hvac_mode == HVACMode.HEAT_COOL:
+            return None
+        return self._attr_target_temperature
 
     @property
     def target_temperature_high(self) -> Optional[float]:
-        return self._attr_target_temperature_high if self._attr_hvac_mode == HVACMode.HEAT_COOL else None
+        if self._attr_hvac_mode != HVACMode.HEAT_COOL:
+            return None
+        return self._attr_target_temperature_high
 
     @property
     def target_temperature_low(self) -> Optional[float]:
-        return self._attr_target_temperature_low if self._attr_hvac_mode == HVACMode.HEAT_COOL else None
+        if self._attr_hvac_mode != HVACMode.HEAT_COOL:
+            return None
+        return self._attr_target_temperature_low
 
     async def _push(self):
-        # Central place to notify your controller about current desired state
+        """Tell the controller about current desired state."""
         await self._controller.set_climate(
             self._room_key,
             hvac_mode=self._attr_hvac_mode,
@@ -140,7 +149,7 @@ class TritonNetRoomClimate(ClimateEntity):
             humidity=None,
         )
 
-    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+    async def async_set_hvac_mode(self, hvac_mode: Union[str, HVACMode]) -> None:
         self._attr_hvac_mode = HVACMode(hvac_mode) if hvac_mode else HVACMode.OFF
         self.async_write_ha_state()
         await self._push()

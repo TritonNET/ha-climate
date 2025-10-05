@@ -39,6 +39,7 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """YAML setup for TritonNET Climate."""
     if DOMAIN not in config:
         return True
 
@@ -54,6 +55,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     _LOGGER.info("TritonNET Climate: main_ac=%s rooms=%s", main_ac, list(rooms.keys()))
 
+    # Load the climate platform using legacy YAML discovery
     hass.async_create_task(
         async_load_platform(hass, "climate", DOMAIN, {}, config)
     )
