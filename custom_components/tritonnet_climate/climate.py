@@ -88,8 +88,7 @@ class TritonNetRoomClimate(ClimateEntity):
         self._controller = controller
         self._room_key = room_key
         self._attr_name = friendly_name
-        # Let HA generate entity_id from unique_id + name (safer for registry/device linking)
-        # self.entity_id = f"climate.tritonnet_{room_key}"
+        # Let HA generate entity_id from unique_id + name
         self._cover_entity_id = cover_entity_id
 
         # Respect system unit (°C/°F)

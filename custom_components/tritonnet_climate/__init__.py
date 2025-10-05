@@ -56,15 +56,15 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.data[DOMAIN][DATA_CONFIG] = cfg
     hass.data[DOMAIN][DATA_CONTROLLER] = controller
 
-    # Create (or get) a single device in the device registry that all room entities will attach to.
+    # Create (or get) a single device in the device registry WITHOUT config_entry_id
     device_registry = dr.async_get(hass)
     device = device_registry.async_get_or_create(
-        config_entry_id=None,  # YAML setup; no ConfigEntry
         identifiers={(DOMAIN, DEVICE_UNIQUE_ID)},
         manufacturer="TritonNET",
         name="TritonNET Climate",
-        model="Controller"
+        model="Controller",
     )
+
     # Store the identifiers for child entities to reuse
     hass.data[DOMAIN][DATA_DEVICE_IDENTIFIERS] = {(DOMAIN, DEVICE_UNIQUE_ID)}
 
